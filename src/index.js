@@ -3,25 +3,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import fetch from "node-fetch";
+import { getWeekNumber, roundCurrency } from "./utils";
 
 const filename = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(filename);
-
-const roundCurrency = (amount, fix = 2) => {
-  const [l, r] = amount.toString().split(".");
-  return r && r.length > fix
-    ? Number(l) + parseFloat(`.${r.slice(0, fix)}`) + 1 / 10 ** fix
-    : amount.toFixed(2);
-};
-
-const getWeekNumber = (date) => {
-  const currentDate = new Date(date);
-  const yearStart = new Date(Date.UTC(currentDate.getUTCFullYear(), 0, 1));
-  const numberOfDays = Math.floor(
-    (currentDate - yearStart) / (24 * 60 * 60 * 1000)
-  );
-  return Math.ceil((currentDate.getDay() + 1 + numberOfDays) / 7);
-};
 
 const questions = [
   {
@@ -33,7 +18,6 @@ const questions = [
 
 inquirer.prompt(questions).then((answers) => {
   const extension = answers.name.slice(-5);
-
   if (extension !== ".json") {
     console.log("File is not a valid json file");
     return;
