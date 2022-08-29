@@ -2,7 +2,7 @@ import inquirer from "inquirer";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import { fetchApi, getWeekNumber, roundCurrency } from "./utils.js";
+import { fetchApi, handleData } from "./utils.js";
 
 const filename = fileURLToPath(import.meta.url);
 const currentDir = path.dirname(filename);
@@ -42,48 +42,8 @@ inquirer.prompt(questions).then((answers) => {
       const rawData = fs.readFileSync(filePath);
       const inputData = JSON.parse(rawData);
 
-      const userData = {};
-
       inputData.forEach((data) => {
-        const { amount } = data.operation;
-
-        if (data.type === "cash_in") {
-          const limit = dataCashIn.max.amount;
-          let fee = (amount * dataCashIn.percents) / 100;
-          fee = fee > limit ? limit : fee;
-          console.log(roundCurrency(fee));
-        } else if (data.user_type === "juridical") {
-          const limit = dataCashOutLegal.min.amount;
-          let fee = (amount * dataCashOutLegal.percents) / 100;
-          fee = fee < limit ? limit : fee;
-          console.log(roundCurrency(fee));
-        } else {
-          const weekNumber = getWeekNumber(data.date);
-          if (userData[data.user_id]) {
-            if (userData[data.user_id][weekNumber]) {
-              userData[data.user_id][weekNumber] = {
-                amount: userData[data.user_id][weekNumber].amount + amount,
-              };
-            } else {
-              userData[data.user_id][weekNumber] = { amount };
-            }
-          } else {
-            userData[data.user_id] = {};
-            userData[data.user_id][weekNumber] = { amount };
-          }
-
-          if (
-            userData[data.user_id][weekNumber].amount <=
-            dataCashOutNatural.week_limit.amount
-          ) {
-            console.log(roundCurrency(0));
-          } else {
-            const limit = dataCashOutNatural.week_limit.amount;
-            const pc = dataCashOutNatural.percents;
-            const fee = ((amount > limit ? amount - limit : amount) * pc) / 100;
-            console.log(roundCurrency(fee));
-          }
-        }
+        handleData(data, dataCashIn, dataCashOutNatural, dataCashOutLegal);
       });
     } else {
       console.log(
